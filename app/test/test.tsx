@@ -1,7 +1,7 @@
 'use client';
 import * as React from 'react';
 import { AppProps } from 'next/app';
-import Navbar from '../components/Navbar';
+import Navbar from '../../components/Navbar';
 import Navbar2 from '@/components/Navbar2';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';

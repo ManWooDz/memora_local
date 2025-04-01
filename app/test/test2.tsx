@@ -1,8 +1,7 @@
 'use client';
 import * as React from 'react';
-import { useState } from 'react';
+import { AppProps } from 'next/app';
 import Navbar2 from '@/components/Navbar2';
-import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import TitleIcon from '@mui/icons-material/Title';
 import PhotoIcon from '@mui/icons-material/Photo';
@@ -11,14 +10,10 @@ import KeyboardVoiceIcon from '@mui/icons-material/KeyboardVoice';
 import Box from '@mui/material/Box';
 import AddIcon from '@mui/icons-material/Add';
 import TextField from '@mui/material/TextField';
+import { useState } from 'react';
 import Typography from '@mui/material/Typography';
 import Image from 'next/image';
-import { FaSearch, FaBars } from 'react-icons/fa';
-import { AiOutlineMinus, AiOutlinePlus } from 'react-icons/ai';
 import { styled } from '@mui/material/styles';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import ButtonGroup from '@mui/material/ButtonGroup';
-import { ST } from 'next/dist/shared/lib/utils';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -32,54 +27,9 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import RemoveIcon from '@mui/icons-material/Remove';
 import { ThemeProvider, CssBaseline } from '@mui/material';
-import themes from '../app/themes';
+import themes from '../themes';
 
-// Import React Query hooks
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-// Define the Flashcard type
-type Flashcard = {
-  id: number;
-  frontText: string;
-  backText: string;
-  imageUrl: string | null;
-  videoUrl: string | null;
-  audioUrl: string | null;
-  status: 'text' | 'image' | 'video' | 'audio';
-};
-
-// API functions for flashcards with proper type annotations
-const fetchFlashcards = async (): Promise<Flashcard[]> => {
-  // Replace with your actual API call
-  // For example: return await fetch('/api/flashcards').then(res => res.json());
-  
-  // For now, we'll return mock data or an empty array
-  return [];
-};
-
-const addFlashcard = async (flashcard: Omit<Flashcard, 'id'> & { id?: number }): Promise<Flashcard> => {
-  // Replace with your actual API call
-  // For example: return await fetch('/api/flashcards', { method: 'POST', body: JSON.stringify(flashcard) }).then(res => res.json());
-  
-  // For now, we'll just return the flashcard with a mock ID
-  return { ...flashcard, id: flashcard.id || Date.now() };
-};
-
-const updateFlashcard = async (flashcard: Flashcard): Promise<Flashcard> => {
-  // Replace with your actual API call
-  // For example: return await fetch(`/api/flashcards/${flashcard.id}`, { method: 'PUT', body: JSON.stringify(flashcard) }).then(res => res.json());
-  
-  // For now, we'll just return the updated flashcard
-  return flashcard;
-};
-
-const deleteFlashcard = async (id: number): Promise<number> => {
-  // Replace with your actual API call
-  // For example: return await fetch(`/api/flashcards/${id}`, { method: 'DELETE' }).then(res => res.json());
-  
-  // For now, we'll just return the id
-  return id;
-};
 
 const VisuallyHiddenInput = styled('input')({
   clip: 'rect(0 0 0 0)',
@@ -93,52 +43,25 @@ const VisuallyHiddenInput = styled('input')({
   width: 1,
 });
 
+type Flashcard = {
+  id: number;
+  frontText: string;
+  backText: string;
+  imageUrl: string | null;
+  videoUrl: string | null;
+  audioUrl: string | null;
+  status: 'text' | 'image' | 'video' | 'audio';
+};
+
 export default function CreateFlashcard() {
-  // Get QueryClient from the context
-  const queryClient = useQueryClient();
-  
-  const [pageCount, setPageCount] = useState(0);
-  const [currentPage, setCurrentPage] = useState(0);
+  const [pageCount, setPageCount] = useState(0)
+  const [currentPage, setCurrentPage] = useState(0)
   const [open, setOpen] = useState(false);
   const [currentCard, setCurrentCard] = useState<Flashcard | null>(null);
-  
-  // Fetch flashcards with React Query - fixed query configuration
-  const { data: flashcards = [], isLoading, isError } = useQuery<Flashcard[], Error>({
-    queryKey: ['flashcards'],
-    queryFn: fetchFlashcards,
-    // Use placeholderData instead of keepPreviousData
-    placeholderData: previousData => previousData,
-  });
 
-  // Mutation for adding a new flashcard
-  const addFlashcardMutation = useMutation({
-    mutationFn: addFlashcard,
-    onSuccess: (newFlashcard) => {
-      // Invalidate the flashcards query to trigger a refetch
-      queryClient.invalidateQueries({ queryKey: ['flashcards'] });
-      setPageCount(prevCount => prevCount + 1);
-    },
-  });
 
-  // Mutation for updating a flashcard
-  const updateFlashcardMutation = useMutation({
-    mutationFn: updateFlashcard,
-    onSuccess: (updatedFlashcard) => {
-      // Invalidate the flashcards query to trigger a refetch
-      queryClient.invalidateQueries({ queryKey: ['flashcards'] });
-    },
-  });
+  const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
 
-  // Mutation for deleting a flashcard
-  const deleteFlashcardMutation = useMutation({
-    mutationFn: deleteFlashcard,
-    onSuccess: (deletedId) => {
-      // Invalidate the flashcards query to trigger a refetch
-      queryClient.invalidateQueries({ queryKey: ['flashcards'] });
-      setPageCount(prevCount => Math.max(0, prevCount - 1));
-      setCurrentPage(prevPage => Math.max(0, prevPage - 1));
-    },
-  });
 
   const detectFlashcardStatus = (flashcard: Flashcard): 'text' | 'image' | 'video' | 'audio' => {
     if (flashcard.imageUrl) return 'image';
@@ -147,7 +70,7 @@ export default function CreateFlashcard() {
     return 'text'; // Default to text if no media exists
   };
   
-  const updateCurrentCard = (key: keyof Flashcard, value: string | null) => {
+  const updateCurrentCard = (key: string, value: string | null) => {
     if (currentCard) {
       setCurrentCard(prev => {
         if (!prev) return null;
@@ -159,30 +82,30 @@ export default function CreateFlashcard() {
     }
   };
 
-  const addNewFlashcard = () => {
-    const newFlashcard = { 
-      id: pageCount + 1, 
-      frontText: "Front", 
-      backText: "Back", 
-      imageUrl: null, 
-      videoUrl: null, 
-      audioUrl: null, 
-      status: 'text' as const
-    };
-    
-    // Use the mutation to add the flashcard
-    addFlashcardMutation.mutate(newFlashcard);
+  const updateFlashcard = (key: string, value: string | null) => {
+    setFlashcards((prev) => {
+      const updatedFlashcards = [...prev];
+      updatedFlashcards[currentPage] = { ...updatedFlashcards[currentPage], [key]: value };
+      return updatedFlashcards;
+    });
   };
+
+
+  const addNewFlashcard = () => {
+    setFlashcards([...flashcards, { id: pageCount +1, frontText: "Front", backText: "Back", imageUrl: null, videoUrl: null, audioUrl: null, status: 'text' }]);
+    setPageCount(pageCount +1);
+  };
+  
   
   const removeLastFlashcard = () => {
     if (flashcards.length > 0) {
-      const lastFlashcard = flashcards[flashcards.length - 1];
-      // Use the mutation to delete the flashcard
-      deleteFlashcardMutation.mutate(lastFlashcard.id);
+      setFlashcards((prev) => prev.slice(0, -1)); // Remove the last flashcard
+      setPageCount((prev) => prev - 1);
+      setCurrentPage((prev) => Math.max(1, prev - 1)); // Ensure currentPage does not go below 1
     }
   };
 
-  const [status, setStatus] = useState<'text' | 'image' | 'video' | 'audio'>('text');
+  const [status, setStatus] = useState('text');
 
   const [fileName, setFileName] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -204,7 +127,7 @@ export default function CreateFlashcard() {
       if (status === 'image' && fileType.startsWith('image/')) {
         setImageUrl(fileUrl);
         updateCurrentCard("imageUrl", fileUrl);
-        updateCurrentCard("status", "image");
+        updateCurrentCard("status", "photo");
       } else if (status === 'video' && fileType.startsWith('video/')) {
         setVideoUrl(fileUrl);
         updateCurrentCard("videoUrl", fileUrl);
@@ -231,6 +154,7 @@ export default function CreateFlashcard() {
     if (card.audioUrl) setAudioUrl(card.audioUrl);
   };
   
+  
   const handleClose = () => {
     setOpen(false);
     setCurrentCard(null);
@@ -238,8 +162,16 @@ export default function CreateFlashcard() {
 
   const handleSave = () => {
     if (currentCard) {
-      // Use the mutation to update the flashcard
-      updateFlashcardMutation.mutate(currentCard);
+      setFlashcards((prev) => {
+        const updatedFlashcards = [...prev];
+        const cardIndex = updatedFlashcards.findIndex((card) => card.id === currentCard.id);
+    
+        if (cardIndex !== -1) {
+          updatedFlashcards[cardIndex] = { ...currentCard };
+        }
+    
+        return updatedFlashcards;
+      });
     }
     handleClose();
   };
@@ -275,15 +207,10 @@ export default function CreateFlashcard() {
     setAudioUrl(null);
   };
   
-  // Display loading state
-  if (isLoading) {
-    return <div className="flex justify-center items-center h-screen">Loading flashcards...</div>;
-  }
-
-  // Display error state
-  if (isError) {
-    return <div className="flex justify-center items-center h-screen">Error loading flashcards.</div>;
-  }
+ console.log(flashcards);
+ console.log("currentPage",currentPage);
+ console.log("pageCount",pageCount);
+ console.log("currentCard",currentCard);
   
   return (
     <div className="relative bg-white overflow-hidden mx-auto shadow-lg min-h-screen">
@@ -295,7 +222,7 @@ export default function CreateFlashcard() {
 
       {/* Flashcard Lists */}
       <TableContainer component={Paper} sx={{ width: '100vw', maxWidth: '100%', overflowX: 'auto' }}>
-        <Table size="small" aria-label="a dense table">
+        <Table  size="small" aria-label="a dense table">
           <TableHead>
             <TableRow>
               <TableCell>No.</TableCell>
@@ -318,6 +245,7 @@ export default function CreateFlashcard() {
                 <TableCell align="right">
                   <Button variant="outlined" onClick={() => handleEdit(card)}>Edit</Button>
                 </TableCell>
+                
               </TableRow>
             ))}
           </TableBody>
@@ -325,18 +253,13 @@ export default function CreateFlashcard() {
       </TableContainer>
       
       <div className="flex justify-center items-center mt-6 gap-8">
-        <Button 
-          variant="contained"
-          disabled={flashcards.length === 0 || deleteFlashcardMutation.isPending}
-        >
+        <Button variant="contained">
           <RemoveIcon onClick={removeLastFlashcard}/>
         </Button>
-        <Button 
-          variant="contained"
-          disabled={addFlashcardMutation.isPending}
-        >
+        <Button variant="contained">
           <AddIcon onClick={addNewFlashcard} />
         </Button>
+        
       </div>
 
       {/* Edit Dialog */}
@@ -376,15 +299,17 @@ export default function CreateFlashcard() {
                                 <Image
                                   src={currentCard?.imageUrl}
                                   alt="Uploaded Image"
+                                  // objectFit='contain'
                                   fill={true}
                                   style={{
-                                    objectFit: 'contain',
-                                    maxWidth: '100%',
-                                    maxHeight: '100%',
+                                    objectFit: 'contain',  // Ensures the image stays within the div's bounds
+                                    maxWidth: '100%',      // Prevents the image from exceeding the container's width
+                                    maxHeight: '100%',     // Prevents the image from exceeding the container's height
                                   }}
                                 />
                               </Box>
                             )}
+
                           </>
                         );
                       case 'video':
@@ -394,11 +319,11 @@ export default function CreateFlashcard() {
                               <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
                                 <video
                                   src={currentCard?.videoUrl}
-                                  controls
+                                  controls // Adds play, pause, volume, and fullscreen controls to the video
                                   style={{
-                                    objectFit: 'contain',
-                                    maxWidth: '100%',
-                                    maxHeight: '100%',
+                                    objectFit: 'contain',  // Ensures the video fits within the div while maintaining aspect ratio
+                                    maxWidth: '100%',      // Prevents the video from exceeding the container's width
+                                    maxHeight: '100%',     // Prevents the video from exceeding the container's height
                                   }}
                                 />
                               </Box>
@@ -437,11 +362,12 @@ export default function CreateFlashcard() {
                     }
                   })()
                 }
+                
               </div>
             </div>
             {/* Upload buttons */}
-            <div className="mx-auto overflow-hidden">
-              <div className="bg-white flex items-center justify-center text-3xl font-bold text-black">
+            <div className="mx-auto  overflow-hidden">
+              <div className=" bg-white flex items-center justify-center text-3xl font-bold text-black">
                 {
                   (() => {
                     switch (status) {
@@ -458,9 +384,9 @@ export default function CreateFlashcard() {
                               Upload image
                               <VisuallyHiddenInput 
                                 type="file"
-                                accept="image/*"
+                                accept="image/*" // Restrict file selection to images
                                 onChange={handleFileChange}
-                                multiple={false}
+                                multiple={false} // Allow only one file to be selected at a time
                               />
                             </Button>
                             {fileName ? (
@@ -473,6 +399,7 @@ export default function CreateFlashcard() {
                                 {error}
                               </Typography>
                             )}
+
                           </>
                         );
                       case 'video':
@@ -488,9 +415,9 @@ export default function CreateFlashcard() {
                               Upload video
                               <VisuallyHiddenInput 
                                 type="file"
-                                accept="video/*"
+                                accept="video/*" // Restrict file selection to images
                                 onChange={handleFileChange}
-                                multiple={false}
+                                multiple={false} // Allow only one file to be selected at a time
                               />
                             </Button>
                             {fileName ? (
@@ -503,6 +430,7 @@ export default function CreateFlashcard() {
                                 {error}
                               </Typography>
                             )}
+
                           </>
                         );
                       case 'audio':
@@ -518,9 +446,9 @@ export default function CreateFlashcard() {
                               Upload audio
                               <VisuallyHiddenInput 
                                 type="file"
-                                accept="audio/*"
+                                accept="audio/*" // Restrict file selection to images
                                 onChange={handleFileChange}
-                                multiple={false}
+                                multiple={false} // Allow only one file to be selected at a time
                               />
                             </Button>
                             {fileName ? (
@@ -533,15 +461,17 @@ export default function CreateFlashcard() {
                                 {error}
                               </Typography>
                             )}
+
                           </>
                         );
                     }
                   })()
                 }
+                
               </div>
             </div>
 
-            {/* Buttons */}
+          
             <div className="flex justify-center gap-4 mt-6 ">
               <Button variant="text" sx={{ border: '1px solid black', width: '40px', height: '40px' }} onClick={() => handleMediaTypeChange('text')}>
                 <TitleIcon />
@@ -559,16 +489,11 @@ export default function CreateFlashcard() {
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose}>Cancel</Button>
-            <Button 
-              variant="contained" 
-              onClick={handleSave}
-              disabled={updateFlashcardMutation.isPending}
-            >
-              Save
-            </Button>
+            <Button variant="contained" onClick={handleSave}>Save</Button>
           </DialogActions>
         </Dialog>
       </ThemeProvider>
+      
     </div>
   );
 }
